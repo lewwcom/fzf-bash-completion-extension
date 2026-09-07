@@ -59,6 +59,25 @@ _fzf_handle_dynamic_completion() {
 
   # ret==124: lazy loader just ran, bash will retry completion cycle
   [[ $ret -eq 124 ]] && return 124
+
+  if [[ "$__fzf_co_filenames" = "1" ]]; then
+    local fzf_func
+    if [[ $(complete -p "$cmd" 2> /dev/null) =~ -F\ *(_fzf_(path|dir)_completion)(\ |$) ]]; then
+      fzf_func="${BASH_REMATCH[1]}"
+    fi
+
+    shift
+    if [[ -n "$fzf_func" ]]; then
+      FZF_COMPLETION_TRIGGER="" "$fzf_func" "$@"
+    else
+      FZF_COMPLETION_TRIGGER="" _fzf_path_completion "$@"
+    fi
+    ret=$?
+
+    compopt +o filenames 2>/dev/null
+    return $ret
+  fi
+
   [[ ${#COMPREPLY[@]} -le 1 ]] && return $ret
 
   local cur picked
@@ -72,14 +91,12 @@ _fzf_handle_dynamic_completion() {
   # spaces (best effort, not strict convention). Only attempted when the
   # candidates aren't filenames: a real path can legitimately contain our
   # delimiter of choice.
-  local -a extra_opts=()
-  if [[ -z $__fzf_co_filenames ]]; then
-    extra_opts+=(--delimiter='\t+| {2,}' --with-nth=1 --accept-nth=1)
-    # Override the preview when description is present
-    local __fzf_desc_re=$'\t+| {2,}'
-    [[ "${COMPREPLY[*]}" =~ $__fzf_desc_re ]] &&
-        extra_opts+=(--preview 'printf "%s\n" {2..}')
-  fi
+  local -a extra_opts=(--delimiter='\t+| {2,}' --with-nth=1 --accept-nth=1)
+
+  # Override the preview when description is present
+  local __fzf_desc_re=$'\t+| {2,}'
+  [[ "${COMPREPLY[*]}" =~ $__fzf_desc_re ]] &&
+    extra_opts+=(--preview 'printf "%s\n" {2..}')
 
   picked=$(
     printf '%s\n' "${COMPREPLY[@]}" |
