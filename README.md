@@ -46,6 +46,9 @@ instead of bash/Readline's plain list.
 
    ```bash
    # .bashrc
+
+   # FZF directory completion doesn't show hidden options by default
+   export FZF_COMPLETION_DIR_OPTS='--walker dir,follow,hidden'
    source /path/to/script/fzf-bash-completion-extension.sh
    ```
 
