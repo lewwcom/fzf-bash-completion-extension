@@ -46,6 +46,9 @@ _fzf_handle_dynamic_completion() {
 
   # Shadow compopt to capture filenames option
   compopt() {
+    # callers may set IFS=$'\n' and '$*' joins on IFS[0]. Pin IFS to single
+    # space so the join is predictable
+    local IFS=' '
     case " $* " in
       *' -o filenames '*) __fzf_co_filenames=1 ;;
       *' +o filenames '*) __fzf_co_filenames='' ;;
